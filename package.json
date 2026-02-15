@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-proxy",
+  "name": "ccp-cli",
   "version": "1.0.0",
   "description": "OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations",
   "type": "module",

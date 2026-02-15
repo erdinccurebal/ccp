@@ -44,7 +44,7 @@ export interface ClaudeInvocation {
   lineEmitter: AsyncGenerator<ClaudeStreamLine>;
 }
 
-const IMAGE_TMP_DIR = join(tmpdir(), "claude-code-proxy-images");
+const IMAGE_TMP_DIR = join(tmpdir(), "ccp-cli-images");
 
 /** Remove all temporary image files created during this session. */
 export function cleanupTempImages(): void {

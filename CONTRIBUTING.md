@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for considering contributing to **claude-code-proxy**! Here's how you can help.
+Thank you for considering contributing to **ccp-cli**! Here's how you can help.
 
 ## Getting Started
 
