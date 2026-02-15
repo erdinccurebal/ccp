@@ -6,6 +6,8 @@
 
 OpenAI-compatible API proxy that translates requests into [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) invocations. Connect any OpenAI-compatible client (Cursor, Continue, Open WebUI, Cline, Windsurf, etc.) and let Claude Code do the heavy lifting, or step in and guide it when you need precise control.
 
+Developed based on [Cherry Studio](https://github.com/CherryHQ/cherry-studio).
+
 ## Prerequisites
 
 - **Node.js** >= 20
