@@ -1,5 +1,9 @@
 # ccp (Claude Code Proxy)
 
+[![npm](https://img.shields.io/npm/v/@erdinccurebal/ccp)](https://www.npmjs.com/package/@erdinccurebal/ccp) [![license](https://img.shields.io/github/license/erdinccurebal/ccp)](LICENSE) [![node](https://img.shields.io/node/v/@erdinccurebal/ccp)](package.json)
+
+**Website:** [erdinccurebal.github.io/ccp](https://erdinccurebal.github.io/ccp)
+
 OpenAI-compatible API proxy that translates requests into [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) invocations. Supports both **vibe coding** and hands-on development — connect any OpenAI-compatible client (Cursor, Continue, Open WebUI, Cline, Windsurf, etc.) and let Claude Code do the heavy lifting, or step in and guide it when you need precise control.
 
 Developed based on [Cherry Studio](https://github.com/CherryHQ/cherry-studio).

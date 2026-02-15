@@ -8,6 +8,7 @@ const VERSION = "1.0.0";
 function printHelp(): void {
   console.log(`
   ccp - Claude Code Proxy CLI
+  https://erdinccurebal.github.io/ccp
 
   Usage:
     ccp start                        Start the proxy server
