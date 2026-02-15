@@ -4,9 +4,7 @@
 
 **Website:** [erdinccurebal.github.io/ccp](https://erdinccurebal.github.io/ccp)
 
-OpenAI-compatible API proxy that translates requests into [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) invocations. Supports both **vibe coding** and hands-on development — connect any OpenAI-compatible client (Cursor, Continue, Open WebUI, Cline, Windsurf, etc.) and let Claude Code do the heavy lifting, or step in and guide it when you need precise control.
-
-Developed based on [Cherry Studio](https://github.com/CherryHQ/cherry-studio).
+OpenAI-compatible API proxy that translates requests into [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) invocations. Connect any OpenAI-compatible client (Cursor, Continue, Open WebUI, Cline, Windsurf, etc.) and let Claude Code do the heavy lifting, or step in and guide it when you need precise control.
 
 ## Prerequisites
 
