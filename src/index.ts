@@ -61,7 +61,7 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 server.listen(config.port, config.host, () => {
-  logger.info(`ccp-cli listening on http://${config.host}:${config.port}`);
+  logger.info(`ccp listening on http://${config.host}:${config.port}`);
   logger.info(`  Claude path:       ${config.claudePath}`);
   logger.info(`  Working dir:       ${config.claudeWorkingDir}`);
   logger.info(`  Permission mode:   ${config.claudePermissionMode}`);

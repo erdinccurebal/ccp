@@ -1,7 +1,7 @@
 {
-  "name": "ccp-cli",
+  "name": "@erdinccurebal/ccp",
   "version": "1.0.0",
-  "description": "OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations",
+  "description": "ccp - OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -26,12 +26,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/erdinccurebal/claude-code-proxy.git"
+    "url": "git+https://github.com/erdinccurebal/ccp.git"
   },
   "bugs": {
-    "url": "https://github.com/erdinccurebal/claude-code-proxy/issues"
+    "url": "https://github.com/erdinccurebal/ccp/issues"
   },
-  "homepage": "https://github.com/erdinccurebal/claude-code-proxy#readme",
+  "homepage": "https://github.com/erdinccurebal/ccp#readme",
   "keywords": [
     "claude",
     "claude-code",

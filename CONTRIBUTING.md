@@ -1,14 +1,14 @@
 # Contributing
 
-Thank you for considering contributing to **ccp-cli**! Here's how you can help.
+Thank you for considering contributing to **ccp**! Here's how you can help.
 
 ## Getting Started
 
 1. **Fork** the repository and clone your fork:
 
    ```bash
-   git clone https://github.com/<your-username>/claude-code-proxy.git
-   cd claude-code-proxy
+   git clone https://github.com/<your-username>/ccp.git
+   cd ccp
    ```
 
 2. **Install dependencies:**

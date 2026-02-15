@@ -1,4 +1,4 @@
-# ccp-cli (Claude Code Proxy)
+# ccp (Claude Code Proxy)
 
 OpenAI-compatible API proxy that translates requests into [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) invocations. Supports both **vibe coding** and hands-on development — connect any OpenAI-compatible client (Cursor, Continue, Open WebUI, Cline, Windsurf, etc.) and let Claude Code do the heavy lifting, or step in and guide it when you need precise control.
 
@@ -13,7 +13,7 @@ Developed based on [Cherry Studio](https://github.com/CherryHQ/cherry-studio).
 
 ```bash
 # Install globally
-npm install -g ccp-cli
+npm install -g @erdinccurebal/ccp
 
 # Configure your API key
 ccp config set API_KEY my-secret-key
@@ -211,13 +211,13 @@ The proxy maintains multi-turn sessions by hashing conversation context and mapp
 
 ```bash
 # Build
-docker build -t ccp-cli .
+docker build -t ccp .
 
 # Run
 docker run -p 8888:8888 \
   -e API_KEY=your-secret-key \
   -e CLAUDE_PERMISSION_MODE=default \
-  ccp-cli
+  ccp
 ```
 
 > **Note:** The Claude CLI must be installed inside the container. The Dockerfile does not install it — you'll need to extend the image or mount the binary.
@@ -226,8 +226,8 @@ docker run -p 8888:8888 \
 
 ```bash
 # Clone and install
-git clone https://github.com/erdinccurebal/claude-code-proxy.git
-cd claude-code-proxy
+git clone https://github.com/erdinccurebal/ccp.git
+cd ccp
 npm install
 
 # Development mode with hot-reload

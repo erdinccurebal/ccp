@@ -243,7 +243,7 @@ function buildSystemdUnit(): string {
   ].join("\n");
 
   return `[Unit]
-Description=Claude Code Proxy
+Description=CCP - Claude Code Proxy
 After=network.target
 
 [Service]
