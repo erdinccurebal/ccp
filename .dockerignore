@@ -1,0 +1,17 @@
+node_modules
+src
+*.log
+.git
+.github
+.env
+.env.*
+!.env.example
+.claude
+.vscode
+.idea
+*.md
+!README.md
+LICENSE
+tsconfig*.json
+.eslintrc*
+.prettierrc*
