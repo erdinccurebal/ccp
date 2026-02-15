@@ -1,6 +1,6 @@
 {
   "name": "@erdinccurebal/ccp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ccp - OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations",
   "type": "module",
   "main": "dist/index.js",
