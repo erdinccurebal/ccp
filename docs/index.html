@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCP - Claude Code Proxy</title>
+<meta name="description" content="OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations. Connect any OpenAI-compatible client and let Claude Code do the heavy lifting.">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #1c2128;
+  --surface: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --green: #3fb950;
+  --purple: #bc8cff;
+  --orange: #d29922;
+  --code-bg: #0d1117;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+nav .container {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+nav .logo { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+nav .logo span { color: var(--accent); }
+nav .nav-links { display: flex; gap: 24px; align-items: center; }
+nav .nav-links a { color: var(--text-secondary); font-size: 0.875rem; }
+nav .nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-toggle { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 4px; }
+.nav-toggle svg { width: 24px; height: 24px; }
+
+/* ── Hero ── */
+.hero {
+  padding: 140px 0 80px;
+  background: linear-gradient(165deg, #0d1117 0%, #161b22 40%, #1a1e2e 70%, #0d1117 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(88,166,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero .container { position: relative; text-align: center; }
+.hero h1 { font-size: 3.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+.hero h1 span { color: var(--accent); }
+.hero .tagline {
+  font-size: 1.2rem; color: var(--text-secondary);
+  max-width: 640px; margin: 0 auto 32px; line-height: 1.7;
+}
+
+.badges { display: flex; gap: 8px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 0;
+  font-size: 0.75rem; border-radius: 4px; overflow: hidden;
+  font-family: var(--mono);
+}
+.badge .badge-label {
+  background: #555; color: #fff; padding: 4px 8px;
+}
+.badge .badge-value {
+  padding: 4px 8px; color: #fff;
+}
+.badge .badge-value.blue { background: #007ec6; }
+.badge .badge-value.green { background: #4c1; }
+.badge .badge-value.orange { background: #fe7d37; }
+
+.install-box {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 20px;
+  font-family: var(--mono); font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+.install-box code { color: var(--green); user-select: all; }
+.install-box .copy-btn {
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; padding: 2px; display: flex; align-items: center;
+  transition: color 0.2s;
+}
+.install-box .copy-btn:hover { color: var(--text); }
+.install-box .copy-btn svg { width: 18px; height: 18px; }
+
+.hero-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+  transition: all 0.2s; border: none; cursor: pointer;
+}
+.btn-primary { background: var(--accent); color: #0d1117; }
+.btn-primary:hover { background: var(--accent-hover); text-decoration: none; color: #0d1117; }
+.btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--text-secondary); text-decoration: none; }
+.btn svg { width: 18px; height: 18px; }
+
+/* ── Section ── */
+section { padding: 80px 0; }
+section:nth-child(even) { background: var(--bg-secondary); }
+.section-title {
+  font-size: 2rem; font-weight: 700; text-align: center;
+  margin-bottom: 12px; letter-spacing: -0.01em;
+}
+.section-subtitle {
+  color: var(--text-secondary); text-align: center;
+  margin-bottom: 48px; font-size: 1.05rem;
+}
+
+/* ── Features ── */
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 28px;
+  transition: border-color 0.2s;
+}
+.feature-card:hover { border-color: var(--accent); }
+.feature-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px; font-size: 1.2rem;
+}
+.feature-icon.blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+.feature-icon.green { background: rgba(63,185,80,0.15); color: var(--green); }
+.feature-icon.purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+.feature-icon.orange { background: rgba(210,153,34,0.15); color: var(--orange); }
+.feature-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.feature-card p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+/* ── Code Blocks ── */
+.code-block {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 20px;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.code-header .copy-btn {
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; padding: 2px; display: flex; align-items: center;
+  transition: color 0.2s; font-size: 0.75rem; gap: 4px;
+}
+.code-header .copy-btn:hover { color: var(--text); }
+.code-header .copy-btn svg { width: 14px; height: 14px; }
+.code-block pre {
+  padding: 16px; overflow-x: auto; font-family: var(--mono);
+  font-size: 0.85rem; line-height: 1.7;
+}
+.code-block code { color: var(--text); }
+.code-block .comment { color: var(--text-secondary); }
+.code-block .command { color: var(--green); }
+.code-block .flag { color: var(--purple); }
+.code-block .string { color: #a5d6ff; }
+
+/* ── Quick Start ── */
+.quickstart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.quickstart-step h3 {
+  font-size: 0.9rem; font-weight: 600; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: #0d1117;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700;
+}
+
+/* ── CLI Commands ── */
+.cli-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden;
+}
+.cli-table th, .cli-table td { padding: 12px 16px; text-align: left; }
+.cli-table th {
+  background: var(--bg-tertiary); font-size: 0.8rem; font-weight: 600;
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.cli-table td { font-size: 0.875rem; border-bottom: 1px solid var(--border); }
+.cli-table tr:last-child td { border-bottom: none; }
+.cli-table td:first-child { font-family: var(--mono); font-size: 0.8rem; color: var(--green); white-space: nowrap; }
+
+/* ── Config Table ── */
+.config-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden; display: block;
+}
+.config-table thead, .config-table tbody, .config-table tr { display: table; width: 100%; table-layout: fixed; }
+.config-table th, .config-table td { padding: 12px 16px; text-align: left; }
+.config-table th {
+  background: var(--bg-tertiary); font-size: 0.8rem; font-weight: 600;
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.config-table td { font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+.config-table tr:last-child td { border-bottom: none; }
+.config-table td:first-child { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+.config-table td:nth-child(2) { font-family: var(--mono); font-size: 0.8rem; color: var(--orange); }
+
+/* ── API Endpoints ── */
+.endpoint-cards { display: grid; gap: 16px; }
+.endpoint-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px;
+}
+.endpoint-method {
+  display: inline-block; font-family: var(--mono); font-size: 0.75rem;
+  font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-right: 8px;
+}
+.endpoint-method.get { background: rgba(63,185,80,0.15); color: var(--green); }
+.endpoint-method.post { background: rgba(88,166,255,0.15); color: var(--accent); }
+.endpoint-path { font-family: var(--mono); font-size: 0.95rem; font-weight: 600; }
+.endpoint-desc { color: var(--text-secondary); font-size: 0.875rem; margin-top: 8px; }
+.endpoint-detail { color: var(--text-secondary); font-size: 0.8rem; margin-top: 6px; font-style: italic; }
+
+/* ── Footer ── */
+footer {
+  padding: 40px 0; border-top: 1px solid var(--border);
+  text-align: center; font-size: 0.875rem; color: var(--text-secondary);
+}
+footer .footer-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; }
+footer .footer-links a { color: var(--text-secondary); }
+footer .footer-links a:hover { color: var(--text); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2.2rem; }
+  .hero .tagline { font-size: 1rem; }
+  .features-grid { grid-template-columns: 1fr; }
+  .quickstart-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .nav-links.open {
+    display: flex; flex-direction: column;
+    position: absolute; top: 56px; left: 0; right: 0;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 16px 24px; gap: 16px;
+  }
+  .nav-toggle { display: block; }
+  .config-table { overflow-x: auto; }
+  .config-table thead, .config-table tbody, .config-table tr { table-layout: auto; }
+  .cli-table { display: block; overflow-x: auto; }
+  .install-box { font-size: 0.8rem; padding: 10px 14px; }
+}
+@media (max-width: 480px) {
+  .hero h1 { font-size: 1.8rem; }
+  section { padding: 48px 0; }
+  .features-grid { gap: 12px; }
+  .feature-card { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a href="#" class="logo"><span>ccp</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#quickstart">Quick Start</a>
+      <a href="#cli">CLI</a>
+      <a href="#config">Config</a>
+      <a href="#api">API</a>
+      <a href="https://github.com/erdinccurebal/ccp" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <h1><span>ccp</span></h1>
+    <p class="tagline">OpenAI-compatible API proxy that translates requests into Claude Code CLI invocations. Connect any OpenAI-compatible client and let Claude Code do the heavy lifting.</p>
+
+    <div class="badges">
+      <span class="badge"><span class="badge-label">npm</span><span class="badge-value blue">v1.0.1</span></span>
+      <span class="badge"><span class="badge-label">license</span><span class="badge-value green">MIT</span></span>
+      <span class="badge"><span class="badge-label">node</span><span class="badge-value orange">&gt;=20</span></span>
+    </div>
+
+    <div class="install-box">
+      <code>npm install -g @erdinccurebal/ccp</code>
+      <button class="copy-btn" data-copy="npm install -g @erdinccurebal/ccp" aria-label="Copy install command">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </button>
+    </div>
+
+    <div class="hero-links">
+      <a href="#quickstart" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/erdinccurebal/ccp" target="_blank" rel="noopener" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="https://www.npmjs.com/package/@erdinccurebal/ccp" target="_blank" rel="noopener" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0h-2.666V8.667h2.666v5.331zm12 0h-1.333v-4h-1.333v4h-1.334v-4h-1.333v4h-2.666V8.667h8v5.331z"/></svg>
+        npm
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <h2 class="section-title">Features</h2>
+    <p class="section-subtitle">Everything you need to bridge OpenAI clients with Claude Code</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        </div>
+        <h3>OpenAI-Compatible API</h3>
+        <p>Drop-in replacement for OpenAI endpoints. Works with Cursor, Continue, Open WebUI, Cline, Windsurf, and any OpenAI-compatible client.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3>Streaming Support</h3>
+        <p>Real-time streaming responses via Server-Sent Events. Get instant feedback as Claude Code processes your requests.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </div>
+        <h3>CLI Tool</h3>
+        <p>Full-featured command-line interface for configuration, server management, and service control. One command to get started.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Service Management</h3>
+        <p>Install as a system service with autostart. Supports macOS (launchd) and Linux (systemd) out of the box.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Session Persistence</h3>
+        <p>Multi-turn session management with optional file persistence. Conversations resume seamlessly across requests and restarts.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        </div>
+        <h3>Error Handling</h3>
+        <p>Claude CLI errors are captured and returned as readable messages. No more empty responses or cryptic failures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start -->
+<section id="quickstart">
+  <div class="container">
+    <h2 class="section-title">Quick Start</h2>
+    <p class="section-subtitle">Up and running in under a minute</p>
+    <div class="quickstart-grid">
+      <div class="quickstart-step">
+        <h3><span class="step-num">1</span> Install</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" data-copy="npm install -g @erdinccurebal/ccp" aria-label="Copy code"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+          </div>
+          <pre><code><span class="comment"># Install globally</span>
+<span class="command">npm install -g @erdinccurebal/ccp</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" data-copy="ccp config set API_KEY my-secret-key" aria-label="Copy code"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+          </div>
+          <pre><code><span class="comment"># Configure your API key</span>
+<span class="command">ccp config set API_KEY my-secret-key</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" data-copy="ccp start" aria-label="Copy code"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+          </div>
+          <pre><code><span class="comment"># Start the server</span>
+<span class="command">ccp start</span></code></pre>
+        </div>
+      </div>
+      <div class="quickstart-step">
+        <h3><span class="step-num">2</span> Use</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" data-copy='curl http://localhost:8888/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d &apos;{
+    "model": "claude-sonnet-4-5-20250929",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "stream": true
+  }&apos;' aria-label="Copy code"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+          </div>
+          <pre><code><span class="comment"># Send a streaming request</span>
+<span class="command">curl</span> http://localhost:8888/v1/chat/completions \
+  <span class="flag">-H</span> <span class="string">"Authorization: Bearer YOUR_API_KEY"</span> \
+  <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="string">'{
+    "model": "claude-sonnet-4-5-20250929",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "stream": true
+  }'</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" data-copy="ccp service install && ccp service start" aria-label="Copy code"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+          </div>
+          <pre><code><span class="comment"># Or run as a background service</span>
+<span class="command">ccp service install</span>
+<span class="command">ccp service start</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLI Commands -->
+<section id="cli">
+  <div class="container">
+    <h2 class="section-title">CLI Commands</h2>
+    <p class="section-subtitle">Complete command reference</p>
+    <table class="cli-table">
+      <thead>
+        <tr><th>Command</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ccp start</td><td>Start the proxy server</td></tr>
+        <tr><td>ccp config set &lt;KEY&gt; &lt;VALUE&gt;</td><td>Set a config value</td></tr>
+        <tr><td>ccp config get &lt;KEY&gt;</td><td>Get a config value</td></tr>
+        <tr><td>ccp config list</td><td>List all config values</td></tr>
+        <tr><td>ccp config reset &lt;KEY&gt;</td><td>Reset a config value to default</td></tr>
+        <tr><td>ccp config path</td><td>Show config file path</td></tr>
+        <tr><td>ccp config help</td><td>Show available config keys and values</td></tr>
+        <tr><td>ccp service install</td><td>Install as system service (autostart)</td></tr>
+        <tr><td>ccp service uninstall</td><td>Remove system service</td></tr>
+        <tr><td>ccp service start</td><td>Start the background service</td></tr>
+        <tr><td>ccp service stop</td><td>Stop the background service</td></tr>
+        <tr><td>ccp service status</td><td>Check service status</td></tr>
+        <tr><td>ccp version</td><td>Show version</td></tr>
+        <tr><td>ccp help</td><td>Show help</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Configuration -->
+<section id="config">
+  <div class="container">
+    <h2 class="section-title">Configuration</h2>
+    <p class="section-subtitle">All settings via <code style="color:var(--green)">ccp config set</code> or environment variables</p>
+    <table class="config-table">
+      <thead>
+        <tr><th style="width:25%">Key</th><th style="width:22%">Default</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>API_KEY</td><td>CCP_API_KEY</td><td>API key for authenticating requests</td></tr>
+        <tr><td>PORT</td><td>8888</td><td>Server port</td></tr>
+        <tr><td>HOST</td><td>127.0.0.1</td><td>Server bind address</td></tr>
+        <tr><td>CORS_ORIGIN</td><td>*</td><td>Allowed CORS origin</td></tr>
+        <tr><td>CLAUDE_PATH</td><td>claude</td><td>Path to Claude CLI binary</td></tr>
+        <tr><td>CLAUDE_WORKING_DIR</td><td><em>(cwd)</em></td><td>Default working directory for Claude</td></tr>
+        <tr><td>CLAUDE_PERMISSION_MODE</td><td>default</td><td>Permission mode (default, plan, bypassPermissions)</td></tr>
+        <tr><td>CLAUDE_MAX_TURNS</td><td>25</td><td>Max agentic turns per request</td></tr>
+        <tr><td>CLAUDE_TIMEOUT_MS</td><td>300000</td><td>Timeout per invocation (5 min)</td></tr>
+        <tr><td>SESSION_TTL_MS</td><td>3600000</td><td>Session time-to-live (1 hour)</td></tr>
+        <tr><td>SESSION_FILE</td><td><em>(empty)</em></td><td>Path to session persistence file</td></tr>
+        <tr><td>DEFAULT_MODEL</td><td>claude-sonnet-4-5-20250929</td><td>Default model</td></tr>
+        <tr><td>LOG_LEVEL</td><td>info</td><td>Log level (error, warn, info, debug)</td></tr>
+        <tr><td>LOG_FILE</td><td><em>(empty)</em></td><td>Log file path (also logs to console)</td></tr>
+        <tr><td>LOG_MAX_SIZE</td><td>10mb</td><td>Max log file size before rotation</td></tr>
+        <tr><td>LOG_MAX_FILES</td><td>5</td><td>Number of rotated log backups</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- API Endpoints -->
+<section id="api">
+  <div class="container">
+    <h2 class="section-title">API Endpoints</h2>
+    <p class="section-subtitle">OpenAI-compatible REST API</p>
+    <div class="endpoint-cards">
+      <div class="endpoint-card">
+        <span class="endpoint-method get">GET</span>
+        <span class="endpoint-path">/health</span>
+        <p class="endpoint-desc">Health check endpoint. Returns <code style="color:var(--green)">{"status": "ok"}</code>.</p>
+      </div>
+      <div class="endpoint-card">
+        <span class="endpoint-method get">GET</span>
+        <span class="endpoint-path">/v1/models</span>
+        <p class="endpoint-desc">List available models. Requires <code style="color:var(--purple)">Authorization: Bearer &lt;API_KEY&gt;</code>.</p>
+        <p class="endpoint-detail">Model aliases: sonnet, opus, haiku</p>
+      </div>
+      <div class="endpoint-card">
+        <span class="endpoint-method post">POST</span>
+        <span class="endpoint-path">/v1/chat/completions</span>
+        <p class="endpoint-desc">OpenAI-compatible chat completions. Supports both streaming and non-streaming responses.</p>
+        <p class="endpoint-detail">Includes token usage, request tracing via X-Request-Id, and multi-turn session management.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="https://github.com/erdinccurebal/ccp" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/@erdinccurebal/ccp" target="_blank" rel="noopener">npm</a>
+      <a href="https://github.com/erdinccurebal/ccp/issues" target="_blank" rel="noopener">Issues</a>
+      <a href="https://github.com/erdinccurebal/ccp/blob/master/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </div>
+    <p>Built by <a href="https://github.com/erdinccurebal" target="_blank" rel="noopener">Erdinc Curebal</a></p>
+  </div>
+</footer>
+
+<script>
+// Mobile nav toggle
+document.querySelector('.nav-toggle').addEventListener('click', () => {
+  document.querySelector('.nav-links').classList.toggle('open');
+});
+
+// Close mobile nav on link click
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.remove('open');
+  });
+});
+
+// Copy to clipboard
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.dataset.copy;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.innerHTML;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      btn.style.color = 'var(--green)';
+      setTimeout(() => { btn.innerHTML = original; btn.style.color = ''; }, 2000);
+    });
+  });
+});
+
+// Smooth scroll offset for fixed nav
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', e => {
+    const target = document.querySelector(anchor.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      const offset = 72;
+      window.scrollTo({ top: target.offsetTop - offset, behavior: 'smooth' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
