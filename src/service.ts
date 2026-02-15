@@ -326,6 +326,20 @@ function linuxStop(): void {
   }
 }
 
+function linuxRestart(): void {
+  if (!existsSync(getSystemdServicePath())) {
+    console.error("  Service is not installed. Run 'ccp service install' first.");
+    process.exit(1);
+  }
+  try {
+    execSync(`systemctl --user restart ${SYSTEMD_SERVICE_NAME}`, { stdio: "inherit" });
+    console.log("  Service restarted.");
+  } catch {
+    console.error("  Failed to restart service.");
+    process.exit(1);
+  }
+}
+
 function linuxStatus(): void {
   if (!existsSync(getSystemdServicePath())) {
     console.log("  Service is not installed.");
@@ -353,8 +367,8 @@ export function handleService(args: string[]): void {
   const action = args[0];
   const os = platform();
 
-  if (!action || !["install", "uninstall", "start", "stop", "status"].includes(action)) {
-    console.error("Usage: ccp service <install|uninstall|start|stop|status>");
+  if (!action || !["install", "uninstall", "start", "stop", "restart", "status"].includes(action)) {
+    console.error("Usage: ccp service <install|uninstall|start|stop|restart|status>");
     process.exit(1);
   }
 
@@ -369,6 +383,7 @@ export function handleService(args: string[]): void {
       case "uninstall": macUninstall(); break;
       case "start":     macStart(); break;
       case "stop":      macStop(); break;
+      case "restart":   macStop(); macStart(); break;
       case "status":    macStatus(); break;
     }
     return;
@@ -380,6 +395,7 @@ export function handleService(args: string[]): void {
     case "uninstall": linuxUninstall(); break;
     case "start":     linuxStart(); break;
     case "stop":      linuxStop(); break;
+    case "restart":   linuxRestart(); break;
     case "status":    linuxStatus(); break;
   }
 }

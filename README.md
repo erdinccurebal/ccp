@@ -42,6 +42,7 @@ ccp service install              # Install as system service (autostart)
 ccp service uninstall            # Remove system service
 ccp service start                # Start the background service
 ccp service stop                 # Stop the background service
+ccp service restart              # Restart the background service
 ccp service status               # Check service status
 ccp version                      # Show version
 ccp help                         # Show help
